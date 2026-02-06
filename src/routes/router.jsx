@@ -1,11 +1,12 @@
 import { createBrowserRouter } from "react-router";
 import MainLayout from "../layouts/MainLayout";
 import Home from "../pages/Home/Home/Home";
-import JoinAsHR from "../pages/Auth/JoinAsHR";
-import JoinAsEmployee from "../pages/Auth/JoinAsEmployee";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import Profile from "../pages/profile/Profile";
+import PrivateRoute from "./PrivateRoute";
+import Assets from "../pages/assets/Assets";
+import Dashboard from "../pages/dashboard/Dashboard";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,22 @@ export const router = createBrowserRouter([
       {
         path: "/profile",
         Component: Profile,
+      },
+      {
+        path: "/assets",
+        element: (
+          <PrivateRoute>
+            <Assets />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "/dashboard",
+        element: (
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        ),
       },
     ],
   },

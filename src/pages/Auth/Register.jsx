@@ -21,7 +21,7 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const { registerUser, signInWithGoogle, updateUserProfile } = useAuth();
+  const { registerUser, updateUserProfile } = useAuth();
 
   const {
     register,
@@ -53,8 +53,21 @@ const Register = () => {
 
             updateUserProfile(userProfile)
               .then(() => {
-                console.log("User profile updated successfully");
-                navigate("/");
+                // ✅ Save user to MongoDB
+                axios
+                  .post("http://localhost:3000/users", {
+                    name: registrationData.name,
+                    email: registrationData.email,
+                    role: role,
+                    companyName:
+                      role === "hr" ? registrationData.companyName : "",
+                    photoURL: imageUrl,
+                    dob: registrationData.dob,
+                  })
+                  .then(() => {
+                    console.log("User saved in DB");
+                    navigate("/");
+                  });
               })
               .catch((error) => {
                 console.error("Error updating user profile:", error);
@@ -66,24 +79,31 @@ const Register = () => {
         );
 
         console.log("User registered successfully:", user);
-        navigate("/");
       })
       .catch((error) => {
         console.error("Error registering user:", error);
       });
   };
 
-  const handleGoogleSignIn = () => {
-    signInWithGoogle()
-      .then((result) => {
-        const user = result.user;
-        console.log("Google sign-in successful:", user);
-        navigate("/");
-      })
-      .catch((error) => {
-        console.error("Error with Google sign-in:", error);
-      });
-  };
+  // const handleGoogleSignIn = () => {
+  //   signInWithGoogle()
+  //     .then((result) => {
+  //       const user = result.user;
+  //       console.log("Google sign-in successful:", user);
+
+  //       axios
+  //         .post("http://localhost:3000/users", {
+  //           name: user.displayName,
+  //           email: user.email,
+  //           role: "employee",
+  //           photoURL: user.photoURL,
+  //         })
+  //         .then(() => navigate("/"));
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error with Google sign-in:", error);
+  //     });
+  // };
 
   return (
     <div className="flex items-center justify-center mt-10 px-2 md:px-0">
@@ -237,7 +257,7 @@ const Register = () => {
 
             <div className="divider">or</div>
 
-            <button
+            {/* <button
               onClick={handleGoogleSignIn}
               type="button"
               className="w-full py-2 rounded-xl border flex items-center justify-center gap-3 hover:bg-base-200 transition"
@@ -248,7 +268,7 @@ const Register = () => {
                 alt="google"
               />
               Sign in with Google
-            </button>
+            </button> */}
 
             <p className="text-sm text-base-content/50 text-center mt-6">
               Already have an account?{" "}

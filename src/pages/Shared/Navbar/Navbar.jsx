@@ -1,18 +1,22 @@
 import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import Logo from "../../../components/logo/Logo";
 import useAuth from "../../../hooks/useAuth";
+import useDatabaseUser from "../../../hooks/useDatabaseUser";
 import { useLocation } from "react-router-dom";
 import { User } from "lucide-react";
 
 const Navbar = () => {
   const { user, logOutUser } = useAuth();
+  const { dbUser } = useDatabaseUser();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleLogOut = () => {
     logOutUser()
       .then(() => {
         console.log("User logged out successfully");
+        navigate("/login");
       })
       .catch((error) => {
         console.error("Error logging out user:", error);
@@ -33,30 +37,60 @@ const Navbar = () => {
           Home
         </NavLink>
       </li>
+
       <li>
         <NavLink
-          to="/register?role=hr"
+          to={"/assets"}
           className={({ isActive }) =>
-            isActive && location.search === "?role=hr"
+            isActive
               ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
               : ""
           }
         >
-          Join as HR
+          Assets
         </NavLink>
       </li>
       <li>
         <NavLink
-          to="/register?role=employee"
+          to={"/dashboard"}
           className={({ isActive }) =>
-            isActive && location.search === "?role=employee"
+            isActive
               ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
               : ""
           }
         >
-          Join as Employee
+          Dashboard
         </NavLink>
       </li>
+
+      {!user && (
+        <>
+          <li>
+            <NavLink
+              to="/register?role=hr"
+              className={({ isActive }) =>
+                isActive && location.search === "?role=hr"
+                  ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
+                  : ""
+              }
+            >
+              Join as HR
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/register?role=employee"
+              className={({ isActive }) =>
+                isActive && location.search === "?role=employee"
+                  ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
+                  : ""
+              }
+            >
+              Join as Employee
+            </NavLink>
+          </li>
+        </>
+      )}
     </div>
   );
   return (
@@ -114,7 +148,9 @@ const Navbar = () => {
               className="dropdown-content menu p-3 shadow bg-base-100 rounded-xl w-52 mt-3"
             >
               <li className="text-center mb-2">
-                <p className="text-sm font-semibold">{user.displayName}</p>
+                <p className="text-sm font-semibold">
+                  {dbUser?.name || user.displayName}
+                </p>
                 <p className="text-xs truncate">{user.email}</p>
               </li>
 

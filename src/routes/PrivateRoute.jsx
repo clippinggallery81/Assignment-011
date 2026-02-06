@@ -2,9 +2,11 @@ import React from "react";
 import useAuth from "../hooks/useAuth";
 import { CircleLoader } from "react-spinners";
 import { Navigate } from "react-router";
+import { useLocation } from "react-router-dom";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -16,7 +18,7 @@ const PrivateRoute = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} />;
   }
 
   return children;

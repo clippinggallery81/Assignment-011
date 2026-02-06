@@ -1,14 +1,15 @@
 import { useState } from "react";
 import signInImg from "../../assets/signin-img.png";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import useAuth from "../../hooks/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
-  const { loginUser, signInWithGoogle } = useAuth();
+  const { loginUser } = useAuth();
 
   const {
     register,
@@ -21,7 +22,8 @@ const Login = () => {
     loginUser(data.email, data.password)
       .then((userCredential) => {
         const user = userCredential.user;
-        navigate("/");
+        const from = location?.state?.from?.pathname || "/";
+        navigate(from);
         console.log("User logged in successfully:", user);
       })
       .catch((error) => {
@@ -29,17 +31,17 @@ const Login = () => {
       });
   };
 
-  const handleGoogleSignIn = () => {
-    signInWithGoogle()
-      .then((result) => {
-        const user = result.user;
-        navigate("/");
-        console.log("Google sign-in successful:", user);
-      })
-      .catch((error) => {
-        console.error("Error with Google sign-in:", error);
-      });
-  };
+  // const handleGoogleSignIn = () => {
+  //   signInWithGoogle()
+  //     .then((result) => {
+  //       const user = result.user;
+  //       navigate("/");
+  //       console.log("Google sign-in successful:", user);
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error with Google sign-in:", error);
+  //     });
+  // };
 
   return (
     <div className="flex items-center justify-center mt-10 px-2 md:px-0">
@@ -119,7 +121,7 @@ const Login = () => {
 
             <div className="divider">or</div>
 
-            <button
+            {/* <button
               onClick={handleGoogleSignIn}
               type="button"
               className="w-full py-2 rounded-xl border flex items-center justify-center gap-3 hover:bg-base-200 transition"
@@ -130,7 +132,7 @@ const Login = () => {
                 alt="google"
               />
               Continue with Google
-            </button>
+            </button> */}
 
             <p className="text-sm text-base-content/50 text-center mt-6">
               Don't have an account?{" "}
