@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+@import "tailwindcss";
+
+@plugin "daisyui"{
+  themes: light, dark, nord, acid;
+};
+@plugin "daisyui/theme" {
+  name: "nord";
+  default: true;
+  --color-primary: #0EA5E9;
+  --color-secondary: #5591ab;
+}
+
+
+body {
+  font-family: "DM Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
