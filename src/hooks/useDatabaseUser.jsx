@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import useAuth from "./useAuth";
 
@@ -6,21 +6,54 @@ const useDatabaseUser = () => {
   const { user } = useAuth();
   const [dbUser, setDbUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+
+  const fetchDbUser = () => {
+    if (!user?.email) return;
+    setLoading(true);
+    axios
+      .get(`http://localhost:3000/user?email=${user.email}`)
+      .then((res) => {
+        setDbUser(res.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching user data:", error);
+        setLoading(false);
+      });
+  };
 
   useEffect(() => {
-    if (user?.email) {
-      axios
-        .get(`http://localhost:3000/user?email=${user.email}`)
-        .then((res) => {
-          setDbUser(res.data);
+    mountedRef.current = true;
+
+    if (!user?.email) {
+      // nothing to do
+      Promise.resolve().then(() => {
+        if (mountedRef.current) {
+          setDbUser(null);
           setLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error fetching user data:", error);
-          setLoading(false);
-        });
+        }
+      });
+      return;
     }
-  }, [user]);
+
+    // schedule initial fetch asynchronously to avoid sync setState in effect
+    Promise.resolve().then(() => {
+      if (mountedRef.current) fetchDbUser();
+    });
+
+    fetchDbUser();
+
+    const onDbUserUpdated = () => {
+      fetchDbUser();
+    };
+
+    window.addEventListener("dbUserUpdated", onDbUserUpdated);
+
+    return () => {
+      window.removeEventListener("dbUserUpdated", onDbUserUpdated);
+    };
+  }, [user?.email]);
 
   return { dbUser, loading };
 };

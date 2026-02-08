@@ -12,6 +12,8 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // console.log("DB User in Navbar:", dbUser);
+
   const handleLogOut = () => {
     logOutUser()
       .then(() => {
@@ -38,9 +40,9 @@ const Navbar = () => {
         </NavLink>
       </li>
 
-      <li>
+      {/* <li>
         <NavLink
-          to={"/assets"}
+          // to={"/assets"}
           className={({ isActive }) =>
             isActive
               ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
@@ -49,7 +51,7 @@ const Navbar = () => {
         >
           Assets
         </NavLink>
-      </li>
+      </li> */}
       <li>
         <NavLink
           to={"/dashboard"}
@@ -130,17 +132,24 @@ const Navbar = () => {
         {user ? (
           <div className="dropdown dropdown-end">
             <label tabIndex={0} className="cursor-pointer">
-              {user?.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt="profile"
-                  className="w-10 h-10 rounded-full object-cover border-2 border-primary"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
-                  <User size={18} className="text-primary" />
-                </div>
-              )}
+              {(() => {
+                const displayedImage =
+                  dbUser?.role === "hr"
+                    ? dbUser?.companyLogo || dbUser?.photoURL || user?.photoURL
+                    : dbUser?.photoURL || user?.photoURL;
+
+                return displayedImage ? (
+                  <img
+                    src={displayedImage}
+                    alt="profile"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-primary"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
+                    <User size={18} className="text-primary" />
+                  </div>
+                );
+              })()}
             </label>
 
             <ul

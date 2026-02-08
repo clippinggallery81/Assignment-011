@@ -26,7 +26,8 @@ const Profile = () => {
           setName(res.data?.name || "");
           setDob(res.data?.dob || "");
           setCompanyName(res.data?.companyName || "");
-          setPhotoURL(res.data?.photoURL || "");
+          // If user is HR, prefer companyLogo; otherwise prefer photoURL
+          setPhotoURL(res.data?.photoURL || res.data?.companyLogo || "");
         });
     }
   }, [user]);
@@ -55,16 +56,10 @@ const Profile = () => {
         formData,
       );
 
-      setPhotoURL(imgRes.data.data.display_url);
+      // Replace the old image with the new one
+      const newImageUrl = imgRes.data.data.display_url;
+      setPhotoURL(newImageUrl);
       setImageUploadLoading(false);
-
-      // Swal.fire({
-      //   icon: "success",
-      //   title: "Success!",
-      //   text: "Profile picture uploaded successfully",
-      //   confirmButtonColor: "#0EA5E9",
-      //   timer: 2000,
-      // });
     } catch (error) {
       setImageUploadLoading(false);
       setNewImage(null);
@@ -83,16 +78,46 @@ const Profile = () => {
     setProfileUpdateLoading(true);
 
     try {
-      await axios.put(`http://localhost:3000/users/${dbUser.email}`, {
+      const updateData = {
         name,
         dob,
         companyName,
-        photoURL,
-      });
+      };
 
-      setDbUser({ ...dbUser, name, dob, companyName, photoURL });
+      // Only update image field if a new image was uploaded
+      if (newImage || photoURL) {
+        if (dbUser.role === "hr") {
+          // For HR, store image in companyLogo (replace existing)
+          updateData.companyLogo = photoURL;
+        } else {
+          // For employees, store in photoURL
+          updateData.photoURL = photoURL;
+        }
+      }
+
+      await axios.put(
+        `http://localhost:3000/users/${dbUser.email}`,
+        updateData,
+      );
+
+      // Update local state accordingly (keep single image field)
+      const updatedUser = { ...dbUser, name, dob, companyName };
+      if (dbUser.role === "hr") {
+        updatedUser.companyLogo = photoURL || dbUser.companyLogo;
+      } else {
+        updatedUser.photoURL = photoURL || dbUser.photoURL;
+      }
+
+      setDbUser(updatedUser);
       setNewImage(null);
       setProfileUpdateLoading(false);
+
+      // Notify other parts of the app (e.g., Navbar) to refetch DB user
+      try {
+        window.dispatchEvent(new Event("dbUserUpdated"));
+      } catch (error) {
+        console.error("Error dispatching dbUserUpdated event:", error);
+      }
 
       Swal.fire({
         icon: "success",
@@ -112,6 +137,12 @@ const Profile = () => {
     }
   };
 
+  // determine which image to show: HR -> companyLogo, Employee -> photoURL
+  const displayedImage =
+    dbUser?.role === "hr"
+      ? photoURL || dbUser?.companyLogo
+      : photoURL || dbUser?.photoURL;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
       <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -120,9 +151,9 @@ const Profile = () => {
         {/* Avatar */}
         <div className="flex items-center gap-6 mb-8">
           <div className="relative">
-            {photoURL ? (
+            {displayedImage ? (
               <img
-                src={photoURL}
+                src={displayedImage}
                 className="w-24 h-24 rounded-full object-cover border-2 border-primary"
               />
             ) : (

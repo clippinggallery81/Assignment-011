@@ -14,12 +14,13 @@ const Register = () => {
   const defaultRole = searchParams.get("role") || "employee";
 
   const [role, setRole] = useState(defaultRole);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     setRole(defaultRole);
   }, [defaultRole]);
-
-  const [showPassword, setShowPassword] = useState(false);
 
   const { registerUser, updateUserProfile } = useAuth();
 
@@ -29,60 +30,78 @@ const Register = () => {
     formState: { errors },
   } = useForm();
 
-  const handleRegistration = (data) => {
-    const registrationData = { role, ...data };
-    console.log("Registration data:", registrationData);
-    const profilePicture = registrationData.profilePicture[0];
+  const handleRegistration = async (data) => {
+    setLoading(true);
+    setError("");
+    try {
+      // Step 1: Register user with Firebase
+      const userCredential = await registerUser(data.email, data.password);
+      const user = userCredential.user;
+      console.log("User registered successfully:", user);
 
-    registerUser(registrationData.email, registrationData.password)
-      .then((userCredential) => {
-        const user = userCredential.user;
+      let imageUrl = "";
+
+      // Step 2: Upload image for both HR Manager and Employee
+      if (data.profilePicture && data.profilePicture[0]) {
+        const imageFile = data.profilePicture[0];
         const formData = new FormData();
-        formData.append("image", profilePicture);
+        formData.append("image", imageFile);
         const image_API_URL = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_image_host_key}`;
 
-        axios.post(image_API_URL, formData).then(
-          (response) => {
-            const imageUrl = response.data.data.display_url;
-            console.log("Image uploaded successfully:", imageUrl);
+        const imageResponse = await axios.post(image_API_URL, formData);
+        imageUrl = imageResponse.data.data.display_url;
+        const uploadType = role === "hr" ? "Company logo" : "Profile picture";
+        console.log(`${uploadType} uploaded successfully:`, imageUrl);
+      }
 
-            const userProfile = {
-              displayName: registrationData.name,
-              photoURL: imageUrl,
-            };
+      // Step 3: Update user profile
+      const userProfile = {
+        displayName: data.name,
+      };
 
-            updateUserProfile(userProfile)
-              .then(() => {
-                // ✅ Save user to MongoDB
-                axios
-                  .post("http://localhost:3000/users", {
-                    name: registrationData.name,
-                    email: registrationData.email,
-                    role: role,
-                    companyName:
-                      role === "hr" ? registrationData.companyName : "",
-                    photoURL: imageUrl,
-                    dob: registrationData.dob,
-                  })
-                  .then(() => {
-                    console.log("User saved in DB");
-                    navigate("/");
-                  });
-              })
-              .catch((error) => {
-                console.error("Error updating user profile:", error);
-              });
-          },
-          (error) => {
-            console.error("Error uploading image:", error);
-          },
-        );
+      if (imageUrl) {
+        userProfile.photoURL = imageUrl;
+      }
 
-        console.log("User registered successfully:", user);
-      })
-      .catch((error) => {
-        console.error("Error registering user:", error);
-      });
+      await updateUserProfile(userProfile);
+
+      // Step 4: Save user to MongoDB with role-specific fields
+      const mongoData = {
+        name: data.name,
+        email: data.email,
+        dob: data.dob,
+        role: role,
+      };
+
+      // Add HR-specific fields
+      if (role === "hr") {
+        mongoData.companyName = data.companyName;
+        mongoData.companyLogo = imageUrl;
+        mongoData.packageLimit = 5;
+        mongoData.currentEmployees = 0;
+        mongoData.subscription = "basic";
+      } else if (role === "employee" && imageUrl) {
+        // Add employee profile image
+        mongoData.photoURL = imageUrl;
+      }
+
+      const response = await axios.post(
+        "http://localhost:3000/users",
+        mongoData,
+      );
+      console.log("User saved in DB:", response.data);
+
+      navigate("/");
+    } catch (err) {
+      console.error("Error during registration:", err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Registration failed. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   // const handleGoogleSignIn = () => {
@@ -141,13 +160,16 @@ const Register = () => {
               <div>
                 <label className="label">Company Name</label>
                 <input
-                  {...register("companyName", { required: true })}
+                  {...register("companyName", {
+                    required:
+                      role === "hr" ? "Company name is required" : false,
+                  })}
                   placeholder="Enter company name"
                   className="input input-bordered w-full focus:outline-none"
                 />
-                {errors.companyName?.type === "required" && (
+                {errors.companyName && (
                   <p className="text-red-500 text-sm">
-                    Company name is required.
+                    {errors.companyName.message}
                   </p>
                 )}
               </div>
@@ -156,42 +178,65 @@ const Register = () => {
             <div>
               <label className="label">Full Name</label>
               <input
-                {...register("name", { required: true })}
+                {...register("name", { required: "Full name is required" })}
                 placeholder="Enter your name"
                 className="input input-bordered w-full focus:outline-none"
-                required
               />
-              {errors.name?.type === "required" && (
-                <p className="text-red-500 text-sm">Full name is required.</p>
+              {errors.name && (
+                <p className="text-red-500 text-sm">{errors.name.message}</p>
               )}
             </div>
 
-            <div>
-              <label className="label">
-                {role === "hr" ? "Company Logo" : "Profile Picture"}
-              </label>
-              <input
-                type="file"
-                {...register("profilePicture", { required: true })}
-                className="file-input file-input-bordered w-full focus:outline-none"
-              />
-              {errors.profilePicture?.type === "required" && (
-                <p className="text-red-500 text-sm">
-                  Profile picture is required.
-                </p>
-              )}
-            </div>
+            {role === "hr" ? (
+              <div>
+                <label className="label">Company Logo</label>
+                <input
+                  type="file"
+                  {...register("profilePicture", {
+                    required: "Company logo is required",
+                  })}
+                  className="file-input file-input-bordered w-full focus:outline-none"
+                />
+                {errors.profilePicture && (
+                  <p className="text-red-500 text-sm">
+                    {errors.profilePicture.message}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label className="label">Profile Picture</label>
+                <input
+                  type="file"
+                  {...register("profilePicture", {
+                    required: "Profile picture is required",
+                  })}
+                  className="file-input file-input-bordered w-full focus:outline-none"
+                />
+                {errors.profilePicture && (
+                  <p className="text-red-500 text-sm">
+                    {errors.profilePicture.message}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="label">Email</label>
               <input
                 type="email"
-                {...register("email", { required: true })}
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Please enter a valid email",
+                  },
+                })}
                 placeholder="Enter email"
                 className="input input-bordered w-full focus:outline-none"
               />
-              {errors.email?.type === "required" && (
-                <p className="text-red-500 text-sm">Email is required.</p>
+              {errors.email && (
+                <p className="text-red-500 text-sm">{errors.email.message}</p>
               )}
             </div>
 
@@ -237,22 +282,27 @@ const Register = () => {
               <label className="label">Date of Birth</label>
               <input
                 type="date"
-                {...register("dob", { required: true })}
+                {...register("dob", { required: "Date of birth is required" })}
                 className="input input-bordered w-full focus:outline-none"
               />
-              {errors.dob?.type === "required" && (
-                <p className="text-red-500 text-sm">
-                  Date of birth is required.
-                </p>
+              {errors.dob && (
+                <p className="text-red-500 text-sm">{errors.dob.message}</p>
               )}
             </div>
 
+            {error && (
+              <div className="alert alert-error">
+                <span>{error}</span>
+              </div>
+            )}
+
             <button
               type="submit"
+              disabled={loading}
               className="w-full py-3 rounded-xl text-white font-semibold
-              bg-primary hover:scale-[1.02] transition-all duration-300 shadow-md"
+              bg-primary hover:scale-[1.02] transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Register
+              {loading ? "Registering..." : "Register"}
             </button>
 
             <div className="divider">or</div>

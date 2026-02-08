@@ -1,8 +1,7 @@
 import React from "react";
 import useAuth from "../hooks/useAuth";
 import { CircleLoader } from "react-spinners";
-import { Navigate } from "react-router";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
