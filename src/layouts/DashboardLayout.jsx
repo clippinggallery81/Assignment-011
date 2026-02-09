@@ -1,13 +1,17 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
 import useDatabaseUser from "../hooks/useDatabaseUser";
 import { MdFormatListBulletedAdd, MdViewList, MdHome } from "react-icons/md";
 import { PiGitPullRequest } from "react-icons/pi";
 import { GrUserManager } from "react-icons/gr";
 import { GiTeamUpgrade } from "react-icons/gi";
 import { CgProfile } from "react-icons/cg";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { MdClose } from "react-icons/md";
 import Navbar from "../pages/Shared/Navbar/Navbar";
 
 const DashboardLayout = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
   const { dbUser, loading } = useDatabaseUser();
 
   if (loading || !dbUser) {
@@ -27,11 +31,26 @@ const DashboardLayout = () => {
     <div className="max-w-7xl mx-auto">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto grid grid-cols-4 bg-base-100 mt-10">
-        <aside className="min-h-screen col-span-4 md:col-span-1 lg:col-span-1 p-4 rounded-lg bg-base-200 shadow-lg">
+      <div className="max-w-7xl mx-auto grid grid-cols-4 bg-base-100 mt-10 relative">
+        {/* Hamburger Menu Button - Only visible on mobile */}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="md:hidden absolute top-0 right-0 p-4 text-2xl text-primary z-50"
+        >
+          {menuOpen ? <MdClose /> : <GiHamburgerMenu />}
+        </button>
+
+        <aside
+          className={`min-h-screen col-span-4 p-4 rounded-lg bg-base-200 shadow-lg absolute md:relative md:col-span-1 w-full md:w-auto transition-all z-40 ${
+            menuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
+        >
           <h2 className="text-xl font-bold text-primary mb-6">Dashboard</h2>
 
-          <ul className="menu gap-2 text-base-content">
+          <ul
+            className="menu gap-2 text-base-content"
+            onClick={() => setMenuOpen(false)}
+          >
             {role === "hr" && (
               <>
                 <li>
@@ -85,7 +104,7 @@ const DashboardLayout = () => {
                 </li>
                 <li>
                   <NavLink
-                    to="/dashboard/employees"
+                    to="/dashboard/assigned-employees"
                     className={({ isActive }) =>
                       isActive
                         ? `text-primary font-bold pb-1 rounded-lg ${btnClass}`
@@ -95,6 +114,7 @@ const DashboardLayout = () => {
                     <GrUserManager /> Employee List
                   </NavLink>
                 </li>
+
                 <li>
                   <NavLink
                     to="/dashboard/upgrade"
@@ -157,6 +177,18 @@ const DashboardLayout = () => {
                 </li>
                 <li>
                   <NavLink
+                    to="/dashboard/my-requests"
+                    className={({ isActive }) =>
+                      isActive
+                        ? `text-primary font-bold pb-1 rounded-lg ${btnClass}`
+                        : btnClass
+                    }
+                  >
+                    <PiGitPullRequest /> My Requests
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
                     to="/dashboard/my-team"
                     className={({ isActive }) =>
                       isActive
@@ -178,10 +210,18 @@ const DashboardLayout = () => {
           </ul>
         </aside>
 
-        <main className="col-span-4 md:col-span-3 lg:col-span-3 p-6 bg-base-100">
+        <main className="col-span-4 md:col-span-3 lg:col-span-3 p-6 bg-base-100 w-full">
           <Outlet />
         </main>
       </div>
+
+      {/* Overlay for mobile menu */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 md:hidden z-30"
+          onClick={() => setMenuOpen(false)}
+        ></div>
+      )}
     </div>
   );
 };

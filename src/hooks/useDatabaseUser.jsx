@@ -12,14 +12,18 @@ const useDatabaseUser = () => {
     if (!user?.email) return;
     setLoading(true);
     axios
-      .get(`http://localhost:3000/user?email=${user.email}`)
+      .get(`http://localhost:3000/user/${user.email}`)
       .then((res) => {
-        setDbUser(res.data);
-        setLoading(false);
+        if (mountedRef.current) {
+          setDbUser(res.data);
+          setLoading(false);
+        }
       })
       .catch((error) => {
         console.error("Error fetching user data:", error);
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       });
   };
 
@@ -37,11 +41,6 @@ const useDatabaseUser = () => {
       return;
     }
 
-    // schedule initial fetch asynchronously to avoid sync setState in effect
-    Promise.resolve().then(() => {
-      if (mountedRef.current) fetchDbUser();
-    });
-
     fetchDbUser();
 
     const onDbUserUpdated = () => {
@@ -51,6 +50,7 @@ const useDatabaseUser = () => {
     window.addEventListener("dbUserUpdated", onDbUserUpdated);
 
     return () => {
+      mountedRef.current = false;
       window.removeEventListener("dbUserUpdated", onDbUserUpdated);
     };
   }, [user?.email]);

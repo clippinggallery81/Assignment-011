@@ -1,32 +1,54 @@
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, UserPlus } from "lucide-react";
 import Swal from "sweetalert2";
 import useDatabaseUser from "../../../hooks/useDatabaseUser";
+import AssignAssetModal from "../../../components/modals/AssignAssetModal";
 
 const AssetList = () => {
   const { dbUser, loading } = useDatabaseUser();
 
   const [assets, setAssets] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [assetToAssign, setAssetToAssign] = useState(null);
 
   const [name, setName] = useState("");
   const [type, setType] = useState("Returnable");
   const [quantity, setQuantity] = useState("");
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
 
   // 🔹 Load assets by HR email
   const fetchAssets = useCallback(async () => {
     if (!dbUser?.email) return;
-    const res = await axios.get(
-      `http://localhost:3000/assets?email=${dbUser.email}`,
-    );
-    setAssets(res.data);
-  }, [dbUser]);
+    try {
+      setLoadingData(true);
+      const res = await axios.get(
+        `http://localhost:3000/assets?email=${dbUser.email}&page=${page}&limit=${limit}`,
+      );
+
+      if (Array.isArray(res.data)) {
+        setAssets(res.data);
+        setTotal(res.data.length);
+      } else {
+        setAssets(res.data.data || []);
+        setTotal(res.data.total || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching assets:", error);
+      setAssets([]);
+      setTotal(0);
+    } finally {
+      setLoadingData(false);
+    }
+  }, [dbUser, page, limit]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAssets();
-  }, [dbUser, fetchAssets]);
+  }, [fetchAssets]);
 
   if (loading) {
     return (
@@ -141,53 +163,98 @@ const AssetList = () => {
     });
   };
 
+  // 🔹 Open assign modal
+  const openAssignModal = (asset) => {
+    setAssetToAssign(asset);
+    // Use a small timeout to ensure the DOM has updated
+    setTimeout(() => {
+      const modal = document.getElementById("assignModal");
+      if (modal) modal.showModal();
+    }, 0);
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow p-6">
+    <div className="bg-white rounded-2xl shadow p-6 mt-8 md:mt-0">
       <h2 className="text-xl font-bold mb-4">Asset List</h2>
 
-      <div className="overflow-x-auto">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Quantity</th>
-              <th>Available</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assets.map((asset) => (
-              <tr key={asset._id}>
-                <td>
-                  <img
-                    src={asset.productImage}
-                    className="w-12 h-12 rounded object-cover"
-                  />
-                </td>
-                <td>{asset.productName}</td>
-                <td>{asset.productType}</td>
-                <td>{asset.productQuantity}</td>
-                <td>{asset.availableQuantity}</td>
-                <td className="flex gap-2">
-                  <button
-                    className="btn btn-sm btn-outline"
-                    onClick={() => openEditModal(asset)}
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline btn-error"
-                    onClick={() => handleDelete(asset._id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
+      {loadingData ? (
+        <div className="flex justify-center items-center h-[40vh]">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Available</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {assets.map((asset) => (
+                <tr key={asset._id}>
+                  <td>
+                    <img
+                      src={asset.productImage}
+                      className="w-12 h-12 rounded object-cover"
+                    />
+                  </td>
+                  <td>{asset.productName}</td>
+                  <td>{asset.productType}</td>
+                  <td>{asset.productQuantity}</td>
+                  <td>{asset.availableQuantity}</td>
+                  <td className="flex gap-2">
+                    <button
+                      className="btn btn-sm btn-outline"
+                      onClick={() => openEditModal(asset)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline btn-info"
+                      onClick={() => openAssignModal(asset)}
+                      disabled={asset.availableQuantity <= 0}
+                    >
+                      <UserPlus size={16} />
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline btn-error"
+                      onClick={() => handleDelete(asset._id)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mt-4">
+        <p className="text-sm text-gray-500">
+          Page {page} of {totalPages}
+        </p>
+        <div className="join">
+          <button
+            className="btn btn-sm join-item"
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={page === 1}
+          >
+            Previous
+          </button>
+          <button
+            className="btn btn-sm join-item"
+            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={page === totalPages}
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* 🔹 EDIT MODAL */}
@@ -232,6 +299,17 @@ const AssetList = () => {
           </div>
         </div>
       </dialog>
+
+      {/* 🔹 ASSIGN MODAL */}
+      <AssignAssetModal
+        asset={assetToAssign}
+        hrEmail={dbUser?.email}
+        companyName={dbUser?.companyName}
+        onAssignSuccess={() => {
+          fetchAssets();
+          setAssetToAssign(null);
+        }}
+      />
     </div>
   );
 };

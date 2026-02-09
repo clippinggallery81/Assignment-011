@@ -1,8 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import heroImg from "../../../assets/signin-img.png";
+import useAuth from "../../../hooks/useAuth";
 
 const Hero = () => {
+  const { user } = useAuth();
   return (
     <section className="flex justify-center items-center l mt-10 px-2 md:px-0">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
@@ -18,21 +20,25 @@ const Hero = () => {
           </p>
 
           <div className="mt-6 flex gap-4">
-            <Link
-              to="/register?role=hr"
-              className="px-6 py-3 rounded-xl text-white font-semibold
-              bg-primary shadow-md hover:scale-[1.03] transition-all"
-            >
-              Join as HR
-            </Link>
+            {!user && (
+              <>
+                <Link
+                  to="/register?role=hr"
+                  className="px-6 py-3 rounded-xl text-white font-semibold
+                  bg-primary shadow-md hover:scale-[1.03] transition-all"
+                >
+                  Join as HR
+                </Link>
 
-            <Link
-              to="/register?role=employee"
-              className="px-6 py-3 rounded-xl border font-semibold
+                <Link
+                  to="/register?role=employee"
+                  className="px-6 py-3 rounded-xl border font-semibold
               hover:bg-base-200 transition"
-            >
-              Join as Employee
-            </Link>
+                >
+                  Join as Employee
+                </Link>
+              </>
+            )}
           </div>
         </div>
 

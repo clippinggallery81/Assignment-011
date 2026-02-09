@@ -4,6 +4,14 @@ import { User, Camera } from "lucide-react";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+const imageUploadClient = axios.create({
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+});
+
+delete imageUploadClient.defaults.headers.common.Authorization;
+
 const Profile = () => {
   const { user } = useAuth();
 
@@ -19,16 +27,17 @@ const Profile = () => {
   // Load user
   useEffect(() => {
     if (user?.email) {
-      axios
-        .get(`http://localhost:3000/user?email=${user.email}`)
-        .then((res) => {
-          setDbUser(res.data);
-          setName(res.data?.name || "");
-          setDob(res.data?.dob || "");
-          setCompanyName(res.data?.companyName || "");
-          // If user is HR, prefer companyLogo; otherwise prefer photoURL
-          setPhotoURL(res.data?.photoURL || res.data?.companyLogo || "");
-        });
+      axios.get(`http://localhost:3000/user/${user.email}`).then((res) => {
+        setDbUser(res.data);
+        setName(res.data?.name || "");
+        setDob(res.data?.dob || "");
+        setCompanyName(res.data?.companyName || "");
+        const initialPhoto =
+          res.data?.role === "hr"
+            ? res.data?.companyLogo || res.data?.photoURL
+            : res.data?.photoURL || res.data?.companyLogo;
+        setPhotoURL(initialPhoto || res.data?.profileImage || "");
+      });
     }
   }, [user]);
 
@@ -44,6 +53,27 @@ const Profile = () => {
   const handleImageUpload = async (file) => {
     if (!file) return;
 
+    if (!file.type?.startsWith("image/")) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid file",
+        text: "Please select an image file",
+        confirmButtonColor: "#0EA5E9",
+      });
+      return;
+    }
+
+    const imageHostKey = import.meta.env.VITE_image_host_key;
+    if (!imageHostKey) {
+      Swal.fire({
+        icon: "error",
+        title: "Missing config",
+        text: "Image upload key is missing. Please set VITE_image_host_key.",
+        confirmButtonColor: "#0EA5E9",
+      });
+      return;
+    }
+
     setImageUploadLoading(true);
     setNewImage(file);
 
@@ -51,8 +81,8 @@ const Profile = () => {
       const formData = new FormData();
       formData.append("image", file);
 
-      const imgRes = await axios.post(
-        `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_image_host_key}`,
+      const imgRes = await imageUploadClient.post(
+        `https://api.imgbb.com/1/upload?key=${imageHostKey}`,
         formData,
       );
 
@@ -64,10 +94,15 @@ const Profile = () => {
       setImageUploadLoading(false);
       setNewImage(null);
       console.error("Error uploading image:", error);
+      const apiMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to upload image";
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Failed to upload image",
+        text: apiMessage,
         confirmButtonColor: "#0EA5E9",
       });
     }
@@ -140,8 +175,8 @@ const Profile = () => {
   // determine which image to show: HR -> companyLogo, Employee -> photoURL
   const displayedImage =
     dbUser?.role === "hr"
-      ? photoURL || dbUser?.companyLogo
-      : photoURL || dbUser?.photoURL;
+      ? photoURL || dbUser?.companyLogo || dbUser?.photoURL
+      : photoURL || dbUser?.photoURL || dbUser?.companyLogo;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">

@@ -40,30 +40,33 @@ const Navbar = () => {
         </NavLink>
       </li>
 
-      {/* <li>
-        <NavLink
-          // to={"/assets"}
-          className={({ isActive }) =>
-            isActive
-              ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
-              : ""
-          }
-        >
-          Assets
-        </NavLink>
-      </li> */}
       <li>
         <NavLink
-          to={"/dashboard"}
+          to={"/assets"}
           className={({ isActive }) =>
             isActive
               ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
               : ""
           }
         >
-          Dashboard
+          All Assets
         </NavLink>
       </li>
+
+      {user && (
+        <li>
+          <NavLink
+            to={"/dashboard"}
+            className={({ isActive }) =>
+              isActive
+                ? "text-primary font-bold border-b-2 border-primary pb-1 rounded-none"
+                : ""
+            }
+          >
+            Dashboard
+          </NavLink>
+        </li>
+      )}
 
       {!user && (
         <>
@@ -96,7 +99,7 @@ const Navbar = () => {
     </div>
   );
   return (
-    <div className="navbar bg-white shadow-lg mt-7 px-5 rounded-lg">
+    <div className="navbar bg-white shadow-lg mt-7 px-5 rounded-lg sticky top-0 z-50">
       <div className="navbar-start">
         <div className="dropdown">
           <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">

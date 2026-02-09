@@ -8,6 +8,14 @@ import axios from "axios";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 
+const imageUploadClient = axios.create({
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+});
+
+delete imageUploadClient.defaults.headers.common.Authorization;
+
 const Register = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -34,6 +42,7 @@ const Register = () => {
     setLoading(true);
     setError("");
     try {
+      sessionStorage.setItem("skipSyncUser", "1");
       // Step 1: Register user with Firebase
       const userCredential = await registerUser(data.email, data.password);
       const user = userCredential.user;
@@ -48,7 +57,10 @@ const Register = () => {
         formData.append("image", imageFile);
         const image_API_URL = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_image_host_key}`;
 
-        const imageResponse = await axios.post(image_API_URL, formData);
+        const imageResponse = await imageUploadClient.post(
+          image_API_URL,
+          formData,
+        );
         imageUrl = imageResponse.data.data.display_url;
         const uploadType = role === "hr" ? "Company logo" : "Profile picture";
         console.log(`${uploadType} uploaded successfully:`, imageUrl);
@@ -76,13 +88,12 @@ const Register = () => {
       // Add HR-specific fields
       if (role === "hr") {
         mongoData.companyName = data.companyName;
-        mongoData.companyLogo = imageUrl;
+        mongoData.companyLogo = imageUrl || null;
         mongoData.packageLimit = 5;
         mongoData.currentEmployees = 0;
         mongoData.subscription = "basic";
-      } else if (role === "employee" && imageUrl) {
-        // Add employee profile image
-        mongoData.photoURL = imageUrl;
+      } else {
+        mongoData.photoURL = imageUrl || null;
       }
 
       const response = await axios.post(
@@ -94,8 +105,10 @@ const Register = () => {
       navigate("/");
     } catch (err) {
       console.error("Error during registration:", err);
+      sessionStorage.removeItem("skipSyncUser");
       setError(
-        err.response?.data?.message ||
+        err.response?.data?.error ||
+          err.response?.data?.message ||
           err.message ||
           "Registration failed. Please try again.",
       );
@@ -161,8 +174,7 @@ const Register = () => {
                 <label className="label">Company Name</label>
                 <input
                   {...register("companyName", {
-                    required:
-                      role === "hr" ? "Company name is required" : false,
+                    required: "Company name is required",
                   })}
                   placeholder="Enter company name"
                   className="input input-bordered w-full focus:outline-none"

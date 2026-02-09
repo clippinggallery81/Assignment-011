@@ -1,16 +1,65 @@
-# React + Vite
+# AssetVerse
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Corporate Asset Management System for HR and employees. Track company assets, requests, assignments, and subscriptions in one dashboard.
 
-Currently, two official plugins are available:
+## Live URL
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- https://your-live-url.example.com
 
-## React Compiler
+## Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- HR and Employee role-based dashboards
+- Asset inventory, requests, approvals, and returns
+- Company affiliations and employee team view
+- Recharts analytics (HR and Employee)
+- Stripe-based package upgrades with payment history
+- JWT-protected APIs and session persistence
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React + Vite
+- Tailwind CSS + DaisyUI
+- Firebase Auth
+- Recharts
+- Axios
+
+## Packages Used
+
+- firebase
+- react-router-dom
+- sweetalert2
+- recharts
+- react-hook-form
+- axios
+- daisyui
+
+## Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a `.env.local` file:
+
+```env
+VITE_apiKey=your_firebase_api_key
+VITE_authDomain=your_firebase_auth_domain
+VITE_projectId=your_firebase_project_id
+VITE_storageBucket=your_firebase_storage_bucket
+VITE_messagingSenderId=your_firebase_messaging_sender_id
+VITE_appId=your_firebase_app_id
+VITE_image_host_key=your_imgbb_key
+```
+
+Run the app:
+
+```bash
+npm run dev
+```
+
+## Notes
+
+- Backend server must be running for API calls.
+- Stripe checkout requires server-side Stripe keys.

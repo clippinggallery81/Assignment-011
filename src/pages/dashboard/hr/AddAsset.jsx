@@ -2,6 +2,15 @@ import { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import useDatabaseUser from "../../../hooks/useDatabaseUser";
+import axiosInstance from "../../../lib/axiosConfig";
+
+const imageUploadClient = axios.create({
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+});
+
+delete imageUploadClient.defaults.headers.common.Authorization;
 
 const AddAsset = () => {
   const { dbUser, loading } = useDatabaseUser();
@@ -51,8 +60,14 @@ const AddAsset = () => {
       const formData = new FormData();
       formData.append("image", imageFile);
 
-      const imgRes = await axios.post(
-        `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_image_host_key}`,
+      const imageHostKey = import.meta.env.VITE_image_host_key;
+      if (!imageHostKey) {
+        Swal.fire("Error", "Image upload key is missing", "error");
+        return;
+      }
+
+      const imgRes = await imageUploadClient.post(
+        `https://api.imgbb.com/1/upload?key=${imageHostKey}`,
         formData,
       );
 
@@ -69,7 +84,7 @@ const AddAsset = () => {
       };
 
       // 🔹 Save to backend
-      await axios.post("http://localhost:3000/assets", assetData);
+      await axiosInstance.post("/assets", assetData);
 
       Swal.fire({
         icon: "success",

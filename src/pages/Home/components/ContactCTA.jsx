@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import useAuth from "../../../hooks/useAuth";
 
 const ContactCTA = () => {
+  const { user } = useAuth();
+
   return (
     <section className="py-20  px-4">
       <div className="max-w-6xl mx-auto text-center">
@@ -14,21 +17,33 @@ const ContactCTA = () => {
         </p>
 
         <div className="mt-8 flex justify-center gap-4 flex-wrap">
-          <Link
-            to="/register?role=hr"
-            className="px-8 py-3 rounded-xl bg-white text-primary font-semibold
-            hover:scale-[1.05] transition shadow"
-          >
-            Join as HR
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="px-8 py-3 rounded-xl bg-primary text-white font-semibold
+              hover:scale-[1.05] transition shadow"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/register?role=hr"
+                className="px-8 py-3 rounded-xl bg-white text-primary font-semibold
+                hover:scale-[1.05] transition shadow"
+              >
+                Join as HR
+              </Link>
 
-          <Link
-            to="/register?role=employee"
-            className="px-8 py-3 rounded-xl border border-white text-white font-semibold bg-primary
-             hover:scale-105 transition"
-          >
-            Join as Employee
-          </Link>
+              <Link
+                to="/register?role=employee"
+                className="px-8 py-3 rounded-xl border border-white text-white font-semibold bg-primary
+                 hover:scale-105 transition"
+              >
+                Join as Employee
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </section>

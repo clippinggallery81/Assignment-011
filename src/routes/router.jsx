@@ -4,7 +4,9 @@ import Home from "../pages/Home/Home/Home";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import Profile from "../pages/profile/Profile";
+import Assets from "../pages/assets/Assets";
 import PrivateRoute from "./PrivateRoute";
+import RoleBasedRoute from "./RoleBasedRoute";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AssetList from "../pages/dashboard/hr/AssetList";
 import MyAssets from "../pages/dashboard/employee/MyAssets";
@@ -13,7 +15,9 @@ import AddAsset from "../pages/dashboard/hr/AddAsset";
 import Packages from "../pages/Home/components/Packages";
 import RequestAsset from "../pages/dashboard/employee/RequestAsset";
 import MyTeam from "../pages/dashboard/employee/MyTeam";
+import MyRequests from "../pages/dashboard/employee/MyRequests";
 import AllRequests from "../pages/dashboard/hr/AllRequests";
+import AssignedEmployees from "../pages/dashboard/hr/AssignedEmployees";
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +27,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: Home,
+      },
+      {
+        path: "/assets",
+        Component: Assets,
       },
       {
         path: "/register",
@@ -53,19 +61,43 @@ export const router = createBrowserRouter([
       },
       {
         path: "assets",
-        element: <AssetList />,
+        element: (
+          <RoleBasedRoute requiredRole="hr">
+            <AssetList />
+          </RoleBasedRoute>
+        ),
       },
       {
         path: "my-assets",
-        element: <MyAssets />,
+        element: (
+          <RoleBasedRoute requiredRole="employee">
+            <MyAssets />
+          </RoleBasedRoute>
+        ),
       },
       {
         path: "add-asset",
-        element: <AddAsset />,
+        element: (
+          <RoleBasedRoute requiredRole="hr">
+            <AddAsset />
+          </RoleBasedRoute>
+        ),
       },
       {
         path: "all-requests",
-        element: <AllRequests />,
+        element: (
+          <RoleBasedRoute requiredRole="hr">
+            <AllRequests />
+          </RoleBasedRoute>
+        ),
+      },
+      {
+        path: "assigned-employees",
+        element: (
+          <RoleBasedRoute requiredRole="hr">
+            <AssignedEmployees />
+          </RoleBasedRoute>
+        ),
       },
       {
         path: "upgrade",
@@ -73,11 +105,27 @@ export const router = createBrowserRouter([
       },
       {
         path: "request-asset",
-        element: <RequestAsset />,
+        element: (
+          <RoleBasedRoute requiredRole="employee">
+            <RequestAsset />
+          </RoleBasedRoute>
+        ),
+      },
+      {
+        path: "my-requests",
+        element: (
+          <RoleBasedRoute requiredRole="employee">
+            <MyRequests />
+          </RoleBasedRoute>
+        ),
       },
       {
         path: "my-team",
-        element: <MyTeam />,
+        element: (
+          <RoleBasedRoute requiredRole="employee">
+            <MyTeam />
+          </RoleBasedRoute>
+        ),
       },
     ],
   },
